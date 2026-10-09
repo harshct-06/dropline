@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DropLine: Multi-Stop Delivery Route Planner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=Sora:wght@600;700;800&display=swap">
+<style>
+:root{--bg:#f3f6fb;--fg:#0d1b2a;--mut:#58677a;--card:#fff;--bd:#dce3ee;--ac:#00a87e;--gr:#7c4dff;--sky:#2f80ed;--vis:rgba(30,120,220,.2);--blk:#2a3340;--tr:240,140,0;--bad:#d64545;--hd:#0b1424;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a111c;--fg:#e8eef7;--mut:#8fa0b5;--card:#121c2b;--bd:#233247;--ac:#2ee6b0;--gr:#a58bff;--sky:#5ea8ff;--blk:#04070b;--tr:255,160,30;--bad:#ff7b72;--hd:#060b13}}
+:root[data-theme="dark"]{--bg:#0a111c;--fg:#e8eef7;--mut:#8fa0b5;--card:#121c2b;--bd:#233247;--ac:#2ee6b0;--gr:#a58bff;--sky:#5ea8ff;--blk:#04070b;--tr:255,160,30;--bad:#ff7b72;--hd:#060b13}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 60px);scroll-behavior:smooth}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 "DM Sans",system-ui,sans-serif}
+.w{max-width:1040px;margin:0 auto;padding:0 18px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--hd);color:#fff;border-bottom:1px solid #ffffff22}
+nav .w{display:flex;align-items:center;gap:6px;height:52px;overflow-x:auto;white-space:nowrap}
+nav b{font:800 18px Sora,sans-serif;margin-right:auto;color:#2ee6b0}
+nav a{color:#c9d6e6;text-decoration:none;font-size:14px;padding:6px 10px;border-radius:6px}
+nav a:hover,nav a:focus-visible{background:#ffffff1c;color:#fff;outline:none}
+.hero{background:radial-gradient(900px 400px at 85% 10%,#1d3b78 0,transparent 60%),var(--hd);color:#fff;padding:56px 0 64px}
+.hero .w{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center}
+@media(max-width:820px){.hero .w{grid-template-columns:1fr}}
+.hero h1{font:800 clamp(2.6rem,7vw,4.4rem)/1 Sora,sans-serif;margin:0 0 14px;letter-spacing:-.03em}
+.hero p{color:#b8c7da;font-size:1.1rem;max-width:46ch;margin:0 0 22px}
+.pills{display:flex;flex-wrap:wrap;gap:10px}
+.pill{border:1px solid #ffffff30;border-radius:999px;padding:6px 14px;font-size:14px;background:#ffffff0d}
+.pill i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px}
+.hero svg{width:100%;height:auto}
+.rt{stroke-dasharray:1500;stroke-dashoffset:0;animation:dr 3.2s ease-out 1}
+@keyframes dr{from{stroke-dashoffset:1500}to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.rt{animation:none}}
+section{padding-top:44px}
+.sh{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.sh span{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--fg);color:var(--card);font:800 15px Sora,sans-serif}
+h2{font:800 1.6rem/1.2 Sora,sans-serif;margin:0;letter-spacing:-.01em}
+p,li{max-width:72ch}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;box-shadow:0 6px 24px -14px rgba(10,30,60,.35)}
+.io{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.algs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+@media(max-width:820px){.io,.algs{grid-template-columns:1fr}}
+.alg{border-top:5px solid var(--c)}
+.alg h3{font:700 1.05rem Sora,sans-serif;margin:2px 0 6px}
+.alg p{margin:0;font-size:15px;color:var(--mut)}
+.io h3{font:700 1rem Sora,sans-serif;margin:0 0 4px}.io p{margin:0}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px}
+@media(max-width:860px){.app{grid-template-columns:1fr}}
+.cap{display:flex;justify-content:space-between;align-items:center;margin:-4px 0 10px;font:600 14px Sora,sans-serif}
+.cap small{font:13px "DM Sans",sans-serif;color:var(--mut)}
+canvas{display:block;width:100%;border-radius:10px;border:1px solid var(--bd);touch-action:manipulation;cursor:crosshair}
+.leg{font-size:13px;line-height:1.5;color:var(--mut);margin:10px 0 0}
+.sw{display:inline-block;width:22px;height:0;border-top:4px solid;vertical-align:middle;margin-right:4px}
+.side{display:flex;flex-direction:column;gap:14px;font-size:14px;line-height:1.5}
+.side h3{margin:0 0 6px;font:700 13px Sora,sans-serif}
+.seg{display:flex;background:var(--bg);border-radius:10px;padding:4px;gap:4px}
+.seg button{flex:1;border:0;background:transparent;padding:8px 4px;border-radius:7px}
+.seg button[aria-pressed="true"]{background:var(--card);box-shadow:0 1px 6px rgba(0,0,0,.2);font-weight:700}
+select,button,input{font:inherit;color:var(--fg)}
+select,button{padding:8px 12px;border-radius:9px;border:1px solid var(--bd);background:var(--card);cursor:pointer}
+button.p{background:var(--ac);color:#04231a;border-color:var(--ac);font-weight:700}
+button:hover{filter:brightness(1.07)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.row{display:flex;gap:8px;margin-top:8px}.row>*{flex:1}
+input[type=range]{width:100%;accent-color:var(--ac)}
+.big{font:800 34px/1.1 Sora,sans-serif;color:var(--ac)}
+.kv{color:var(--mut)}
+.warn{color:var(--bad);font-weight:700}
+.wrap{overflow-x:auto;border-radius:14px}
+table{border-collapse:collapse;font-size:14px;width:100%;min-width:560px;background:var(--card);border:1px solid var(--bd)}
+th{background:var(--bg);font:700 13px Sora,sans-serif}
+th,td{border-bottom:1px solid var(--bd);padding:10px 12px;text-align:left}
+.ok,.no{font-weight:700}.ok{color:var(--ac)}.no{color:var(--bad)}
+.ctl{display:flex;gap:12px;align-items:center;margin:0 0 12px}
+footer{margin-top:60px;padding:26px 0;background:var(--hd);color:#8fa0b5;font-size:14px}
+.in{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;align-items:center;margin-bottom:10px}input[type=number]{width:100%;padding:7px 8px;border-radius:9px;border:1px solid var(--bd);background:var(--card)}</style></head><body>
+<nav><div class="w"><b>DropLine</b><a href="#problem">Problem</a><a href="#demo">Prototype</a><a href="#tests">Tests</a><a href="#why">Why</a><a href="#complexity">Complexity</a><a href="#results">Results</a></div></nav>
+<header class="hero"><div class="w"><div>
+<h1>Plan the shortest delivery round.</h1>
+<p>DropLine takes a depot, a set of customers and a city full of traffic, then finds the cheapest order to visit them all.</p>
+<div class="pills"><span class="pill"><i style="background:#5ea8ff"></i>Dijkstra measures the roads</span><span class="pill"><i style="background:#a58bff"></i>Greedy builds a quick route</span><span class="pill"><i style="background:#2ee6b0"></i>Backtracking finds the best</span></div></div>
+<svg viewBox="0 0 520 300" role="img" aria-label="Animated delivery route through five stops">
+<defs><pattern id="gp" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0H0V26" fill="none" stroke="#ffffff14"/></pattern></defs>
+<rect width="520" height="300" rx="18" fill="url(#gp)" stroke="#ffffff1f"/>
+<polyline class="rt" points="60,236 170,236 170,150 290,150 290,64 430,64 430,190 340,190 340,254 60,254 60,236" fill="none" stroke="#2ee6b0" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<g fill="#5ea8ff" stroke="#fff" stroke-width="3"><circle cx="170" cy="150" r="11"/><circle cx="290" cy="64" r="11"/><circle cx="430" cy="64" r="11"/><circle cx="430" cy="190" r="11"/><circle cx="340" cy="254" r="11"/></g>
+<rect x="46" y="226" width="28" height="28" rx="5" fill="#0b1424" stroke="#fff" stroke-width="3"/><text x="60" y="246" text-anchor="middle" fill="#fff" font-size="15" font-weight="800" font-family="Sora,sans-serif">S</text></svg>
+</div></header>
+
+<main class="w">
+<section id="problem"><div class="sh"><span>1</span><h2>The problem</h2></div>
+<p>A rider starts at a source, must visit every customer once, and finishes at a destination (or returns to the source). Roads have traffic costs and some are closed. Which visiting order costs least?</p>
+<div class="io"><div class="card"><h3>Input</h3><p>A weighted city grid (traffic cost 1 to 5 per junction, closed roads), a source, a destination and k customer stops.</p></div><div class="card"><h3>Output</h3><p>The visiting order, the road path between stops, and the total cost.</p></div></div>
+<div class="algs"><div class="card alg" style="--c:var(--sky)"><h3>Dijkstra</h3><p>Finds the cheapest road path between every pair of stops and builds the cost table.</p></div>
+<div class="card alg" style="--c:var(--gr)"><h3>Greedy</h3><p>Always drives to the nearest unvisited stop. Very fast, but can be wrong.</p></div>
+<div class="card alg" style="--c:var(--ac)"><h3>Backtracking</h3><p>Tries visiting orders and drops a partial route once it costs more than the best found. Always optimal.</p></div></div></section>
+
+<section id="demo"><div class="sh"><span>2</span><h2>Live prototype</h2></div>
+<div class="app">
+<div class="card"><div class="cap">City map<small>Click the map to edit it</small></div><canvas id="cv" aria-label="City grid with delivery stops and routes"></canvas>
+<p class="leg"><span class="sw" style="border-color:var(--ac)"></span>Backtracking (optimal) &nbsp; <span class="sw" style="border-top-style:dashed;border-color:var(--gr)"></span>Greedy &nbsp; Amber shade = heavier traffic, dark = closed road. Square S = source, diamond D = destination, numbers = visit order.</p></div>
+<div class="side">
+<div class="card"><h3>Route input (column, row)</h3>
+<div class="in"><span>Source</span><input id="sc" type="number" min="1" max="24" aria-label="Source column"><input id="sr" type="number" min="1" max="16" aria-label="Source row">
+<span>Destination</span><input id="ec" type="number" min="1" max="24" aria-label="Destination column"><input id="er" type="number" min="1" max="16" aria-label="Destination row"></div>
+<label class="leg" style="display:flex;gap:8px;align-items:center"><input id="rt" type="checkbox">Return to source (round trip)</label>
+<div class="row"><button id="go" class="p">Plan route</button></div><p class="leg warn" id="imsg"></p></div>
+<div class="card"><h3>Or click on the map to set</h3>
+<div class="seg" id="mode"><button data-m="s" aria-pressed="true">Stop</button><button data-m="d" aria-pressed="false">Source</button><button data-m="e" aria-pressed="false">Dest.</button><button data-m="b" aria-pressed="false">Road</button></div>
+<p class="leg" id="hint"></p>
+<h3 style="margin-top:14px">Show route</h3>
+<select id="view" style="width:100%"><option value="x">Both algorithms</option><option value="b">Backtracking only</option><option value="g">Greedy only</option></select>
+<h3 style="margin-top:14px">Random stops: <span id="kv">6</span></h3>
+<input id="k" type="range" min="2" max="9" value="6">
+<div class="row"><button id="rs" class="p">New stops</button><button id="rc">New city</button></div>
+<div class="row"><button id="clr">Reopen all roads</button></div></div>
+<div class="card" id="out"></div>
+</div></div></section>
+
+<section id="tests"><div class="sh"><span>3</span><h2>Test cases</h2></div>
+<p>Each row is checked when the page loads. The greedy-trap case uses a hand-built distance table where nearest-neighbour is provably worse than the best order.</p>
+<div class="wrap"><table id="tests-t"></table></div></section>
+
+<section id="why"><div class="sh"><span>4</span><h2>Why these algorithms?</h2></div>
+<p><b>Dijkstra</b> suits the road layer because traffic costs are never negative. It runs once from the depot and once from each stop, giving a (k+1)×(k+1) cost table. <b>Greedy</b> is short-sighted: an early cheap move can force a long trip later, as test 5 shows. <b>Backtracking</b> abandons a partial route as soon as its cost reaches the best complete route found so far. Seeding that limit with the greedy answer prunes most of the search, and the result is exact.</p>
+<p>Alternatives: dynamic programming (Held-Karp, O(2<sup>k</sup>k²)) is faster for larger k but needs more memory. Genetic algorithms and 2-opt give good, not guaranteed, routes for hundreds of stops. For a rider with under about 12 stops, pruned backtracking is simple and exact.</p></section>
+
+<section id="complexity"><div class="sh"><span>5</span><h2>Complexity</h2></div>
+<div class="wrap"><table style="min-width:520px"><tr><th>Part</th><th>Time</th><th>Space</th></tr>
+<tr><td>Dijkstra, one source (binary heap)</td><td>O((V+E) log V)</td><td>O(V)</td></tr>
+<tr><td>Distance table: k+1 Dijkstra runs</td><td>O(k · V log V)</td><td>O(k · V) to keep paths</td></tr>
+<tr><td>Greedy nearest neighbour</td><td>O(k²)</td><td>O(k)</td></tr>
+<tr><td>Backtracking</td><td>O(k!) worst case, far less with pruning</td><td>O(k) recursion depth</td></tr></table></div></section>
+
+<section id="results"><div class="sh"><span>6</span><h2>Experimental results</h2></div>
+<p>Averages over 3 random 30×30 cities (15% roads closed) per row. Times come from your browser, so they vary by device.</p>
+<div class="ctl"><button id="bench" class="p">Run benchmark</button><span id="bstat" class="leg"></span></div>
+<div class="wrap"><table id="bt"><tr><td class="leg">Press "Run benchmark".</td></tr></table></div>
+<p id="bnote"></p>
+<div class="sh" style="margin-top:36px"><span>7</span><h2>Practical use and limits</h2></div>
+<p>The same pipeline suits food delivery, courier rounds, garbage collection and field-service visits: swap the grid for a real road graph and refresh costs from live traffic. Limits: the grid ignores one-way streets and delivery time windows, and exact backtracking stops being practical beyond roughly 12 stops, where Held-Karp or a heuristic takes over.</p></section>
+</main>
+<footer><div class="w">DropLine: Dijkstra, greedy and backtracking applied to multi-stop delivery routing.</div></footer>
+<script>
+const $=s=>document.querySelector(s);
+function rng(a){return()=>{a=(a*1664525+1013904223)>>>0;return a/4294967296}}
+function makeGrid(w,h,seed,dens,uni){const r=rng(seed),n=w*h,cost=new Uint8Array(n),blk=new Uint8Array(n);
+ for(let i=0;i<n;i++){cost[i]=uni?1:1+Math.floor(r()*5);blk[i]=(!uni&&r()<dens)?1:0}return{w,h,cost,blk}}
+class Heap{constructor(){this.k=[];this.v=[]}get size(){return this.k.length}
+ push(key,val){const k=this.k,v=this.v;let i=k.length;k.push(key);v.push(val);while(i>0){const p=(i-1)>>1;if(k[p]<=key)break;k[i]=k[p];v[i]=v[p];i=p}k[i]=key;v[i]=val}
+ pop(){const k=this.k,v=this.v,r=v[0],lk=k.pop(),lv=v.pop(),n=k.length;if(n>0){let i=0;for(;;){let c=2*i+1;if(c>=n)break;if(c+1<n&&k[c+1]<k[c])c++;if(k[c]>=lk)break;k[i]=k[c];v[i]=v[c];i=c}k[i]=lk;v[i]=lv}return r}}
+function nb(g,i){const{w,h}=g,x=i%w,o=[];if(x>0)o.push(i-1);if(x<w-1)o.push(i+1);if(i>=w)o.push(i-w);if(i<w*(h-1))o.push(i+w);return o}
+
+/* Dijkstra from one source to every junction */
+function dijkstraAll(g,s){const n=g.w*g.h,d=new Float64Array(n).fill(Infinity),prev=new Int32Array(n).fill(-1),done=new Uint8Array(n),H=new Heap();
+ d[s]=0;H.push(0,s);
+ while(H.size){const u=H.pop();if(done[u])continue;done[u]=1;
+  for(const v of nb(g,u)){if(g.blk[v])continue;const nd=d[u]+g.cost[v];if(nd<d[v]){d[v]=nd;prev[v]=u;H.push(nd,v)}}}
+ return{d,prev}}
+function buildMatrix(g,nodes){const t0=performance.now(),P=[];
+ const M=nodes.map(a=>{const r=dijkstraAll(g,a);P.push(r.prev);return nodes.map(b=>r.d[b])});
+ return{M,P,ms:performance.now()-t0}}
+
+/* Greedy nearest neighbour. end = index of the final node (0 = return to source) */
+function greedy(M,end=0){const t0=performance.now(),k=M.length,m=end===0?k-1:k-2,seen=new Uint8Array(k);seen[0]=1;let cur=0,cost=0;const order=[0];
+ for(let s=1;s<=m;s++){let b=-1,bd=Infinity;for(let j=1;j<=m;j++)if(!seen[j]&&M[cur][j]<bd){bd=M[cur][j];b=j}
+  if(b<0)return{cost:Infinity,order:[],ms:performance.now()-t0};seen[b]=1;cost+=bd;order.push(b);cur=b}
+ cost+=M[cur][end];order.push(end);return{cost,order,ms:performance.now()-t0}}
+
+/* Backtracking with branch-and-bound pruning, seeded by the greedy answer */
+function backtrack(M,init,end=0){const t0=performance.now(),k=M.length,m=end===0?k-1:k-2,seen=new Uint8Array(k);seen[0]=1;
+ let best=init.cost,bo=init.order.slice(),nodes=0;const path=[0];
+ (function go(cur,cost,depth){nodes++;
+  if(depth===m+1){const tot=cost+M[cur][end];if(tot<best){best=tot;bo=[...path,end]}return}
+  for(let j=1;j<=m;j++){if(seen[j])continue;const c=cost+M[cur][j];if(c>=best)continue;seen[j]=1;path.push(j);go(j,c,depth+1);path.pop();seen[j]=0}})(0,0,1);
+ return{cost:best,order:bo,nodes,ms:performance.now()-t0}}
+function brute(M,end=0){const k=M.length,m=end===0?k-1:k-2,seen=new Uint8Array(k);seen[0]=1;let best=Infinity;
+ (function go(c,cost,d){if(d===m+1){best=Math.min(best,cost+M[c][end]);return}for(let j=1;j<=m;j++){if(seen[j])continue;seen[j]=1;go(j,cost+M[c][j],d+1);seen[j]=0}})(0,0,1);return best}
+function randStops(q,n,seed,avoid){const r=rng(seed),o=[];let guard=0;
+ while(o.length<n&&guard++<5000){const i=Math.floor(r()*q.w*q.h);if(q.blk[i]||[].concat(avoid).includes(i)||o.includes(i))continue;o.push(i)}return o}
+const fact=n=>n<2?1:n*fact(n-1);
+
+/* ---- app state ---- */
+const W=24,H=16;let seed=11,g=makeGrid(W,H,seed,.14),D=W+1,E=W*H-W-2,round=false,stops=[],mode="s",plan=null;
+g.blk[D]=g.blk[E]=0;stops=randStops(g,6,21,[D,E]);
+const cv=$("#cv"),ctx=cv.getContext("2d"),css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const label=o=>o.map(i=>i===0?"Source":(i===plan.end&&!plan.rd)?"Destination":i).join(" → ");
+const HINT={s:"Click an empty junction to add a stop, or a stop to remove it.",d:"Click a junction to set the source.",e:"Click a junction to set the destination.",b:"Click a junction to close or reopen the road."};
+
+function compute(){const rd=round||E===D,nodes=rd?[D,...stops]:[D,...stops,E],end=rd?0:nodes.length-1,m=buildMatrix(g,nodes),gr=greedy(m.M,end),bt=backtrack(m.M,gr,end);plan={nodes,m,gr,bt,end,rd}}
+function legPath(from,to){const p=[],prev=plan.m.P[from];for(let c=plan.nodes[to];c!==-1;c=prev[c]){p.push(c);if(c===plan.nodes[from])break}return p.reverse()}
+function drawRoute(order,color,dash,lw,off){ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.setLineDash(dash);ctx.lineJoin="round";ctx.lineCap="round";
+ for(let i=0;i+1<order.length;i++){const p=legPath(order[i],order[i+1]);ctx.beginPath();
+  p.forEach((c,j)=>{const x=c%W*cell+cell/2+off,y=((c/W)|0)*cell+cell/2+off;j?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}ctx.setLineDash([])}
+let cell=24;
+function render(){
+ const dpr=window.devicePixelRatio||1,cw=cv.clientWidth;cell=cw/W;cv.width=Math.round(cw*dpr);cv.height=Math.round(cell*H*dpr);cv.style.height=cell*H+"px";ctx.setTransform(dpr,0,0,dpr,0,0);
+ const tr=css("--tr"),blk=css("--blk"),ac=css("--ac"),gr=css("--gr"),view=$("#view").value;
+ for(let i=0;i<W*H;i++){const x=i%W*cell,y=((i/W)|0)*cell;ctx.fillStyle=g.blk[i]?blk:"rgba("+tr+","+(g.cost[i]-1)*.11+")";ctx.fillRect(x,y,cell,cell);
+  ctx.strokeStyle="rgba(128,140,150,.25)";ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,cell,cell)}
+ const ok=isFinite(plan.bt.cost);
+ if(ok){if(view!=="b")drawRoute(plan.gr.order,gr,[7,5],Math.max(2,cell/9),view==="x"?cell*.12:0);if(view!=="g")drawRoute(plan.bt.order,ac,[],Math.max(3,cell/6),view==="x"?-cell*.12:0)}
+ const ord=ok?(view==="g"?plan.gr.order:plan.bt.order):[],num={};ord.forEach((n,i)=>{if(n>0&&i<ord.length-1&&!(n===plan.end&&!plan.rd))num[n]=i});
+ plan.nodes.forEach((n,i)=>{const x=n%W*cell+cell/2,y=((n/W)|0)*cell+cell/2,r=cell*.4;
+  const isE=!plan.rd&&i===plan.end;ctx.fillStyle=i===0?"#14202e":isE?"#d6336c":"#1e78dc";ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.beginPath();
+  if(i===0)ctx.rect(x-r,y-r,2*r,2*r);else if(isE){ctx.moveTo(x,y-r*1.25);ctx.lineTo(x+r*1.25,y);ctx.lineTo(x,y+r*1.25);ctx.lineTo(x-r*1.25,y);ctx.closePath()}else ctx.arc(x,y,r,0,7);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#fff";ctx.font="700 "+Math.floor(cell*.5)+"px Verdana,sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(i===0?"S":isE?"D":(num[i]||"?"),x,y+1)});
+ const {gr:G,bt:B,m}=plan;let h;
+ if(!ok)h='<p class="warn">The source, destination or a stop is walled in by closed roads. Reopen a road or move it.</p>';
+ else{const ex=(G.cost/B.cost-1)*100;
+  h=`<h3>Result</h3><div class="big">${B.cost}</div><div class="kv">best total cost (backtracking)</div>
+  <p><b>Greedy:</b> cost ${G.cost}, ${G.ms.toFixed(2)} ms<br><span class="kv">${label(G.order)}</span></p>
+  <p><b>Backtracking:</b> cost ${B.cost}, ${B.ms.toFixed(2)} ms, ${B.nodes} partial routes explored of ${fact(stops.length)} possible orders<br><span class="kv">${label(B.order)}</span></p>
+  <p>${ex>0.001?`Greedy is <b>${ex.toFixed(1)}% costlier</b> than the optimum here.`:"Greedy happened to find the optimum here."}</p>`}
+ h+=`<p class="kv">Dijkstra ran ${plan.nodes.length} times to build the cost table in ${m.ms.toFixed(2)} ms.</p>`;$("#out").innerHTML=h}
+function refresh(){compute();render()}
+
+cv.addEventListener("pointerdown",e=>{const b=cv.getBoundingClientRect(),x=Math.floor((e.clientX-b.left)/cell),y=Math.floor((e.clientY-b.top)/cell);if(x<0||y<0||x>=W||y>=H)return;const i=y*W+x;
+ const free=!g.blk[i]&&!stops.includes(i);
+ if(mode==="d"){if(free&&i!==E)D=i}
+ else if(mode==="e"){if(free&&i!==D){E=i;round=false}}
+ else if(mode==="s"){const j=stops.indexOf(i);if(j>=0){if(stops.length>1)stops.splice(j,1)}else if(!g.blk[i]&&i!==D&&i!==E&&stops.length<9)stops.push(i)}
+ else if(i!==D&&i!==E&&!stops.includes(i))g.blk[i]^=1;
+ sync(); refresh()});
+document.querySelectorAll("#mode button").forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll("#mode button").forEach(x=>x.setAttribute("aria-pressed",x===b));$("#hint").textContent=HINT[mode]});
+$("#hint").textContent=HINT.s;$("#view").onchange=render;$("#k").oninput=e=>$("#kv").textContent=e.target.value;
+$("#rs").onclick=()=>{seed+=3;stops=randStops(g,+$("#k").value,seed,[D,E]);refresh()};
+$("#rc").onclick=()=>{seed+=7;g=makeGrid(W,H,seed,.14);g.blk[D]=g.blk[E]=0;stops=randStops(g,+$("#k").value,seed+1,[D,E]);refresh()};
+$("#clr").onclick=()=>{g.blk.fill(0);refresh()};
+addEventListener("resize",render);
+
+/* ---- tests ---- */
+function runTests(){const T=[],add=(n,e,v)=>T.push([n,String(e),String(v),String(e)===String(v)]),u=(w,h)=>makeGrid(w,h,1,0,true);
+ let q=u(10,10);add("Dijkstra: open grid, corner to corner",18,dijkstraAll(q,0).d[99]);
+ q=u(10,10);for(let y=0;y<9;y++)q.blk[y*10+5]=1;add("Dijkstra: wall with one gap, detour",27,dijkstraAll(q,0).d[9]);
+ q=u(10,10);q.blk[98]=q.blk[89]=1;add("Dijkstra: goal enclosed by closed roads","Infinity",dijkstraAll(q,0).d[99]);
+ q=u(10,10);let M=buildMatrix(q,[0,3,6]).M,a=greedy(M),b=backtrack(M,a);add("Stops in a line: greedy, backtracking costs","12,12",a.cost+","+b.cost);
+ M=[[0,1,2],[1,0,10],[1,1,0]];a=greedy(M);b=backtrack(M,a);add("Greedy trap (hand-built table): greedy, optimal","12,4",a.cost+","+b.cost);
+ q=u(10,10);M=buildMatrix(q,[0,3,9]).M;a=greedy(M,2);b=backtrack(M,a,2);add("Source to destination via one stop (open path)","9,9",a.cost+","+b.cost);
+ q=makeGrid(20,20,4,.15);q.blk[0]=0;const st=randStops(q,7,9,0);M=buildMatrix(q,[0,...st]).M;a=greedy(M);b=backtrack(M,a);
+ add("Random city, 7 stops: backtracking equals brute force",brute(M),b.cost);add("Random city: backtracking never worse than greedy",true,b.cost<=a.cost);
+ $("#tests-t").innerHTML="<tr><th>#</th><th>Test</th><th>Expected</th><th>Got</th><th>Result</th></tr>"+T.map((t,i)=>`<tr><td>${i+1}</td><td>${t[0]}</td><td>${t[1]}</td><td>${t[2]}</td><td class="${t[3]?"ok":"no"}">${t[3]?"PASS":"FAIL"}</td></tr>`).join("")}
+
+/* ---- benchmark ---- */
+$("#bench").onclick=async()=>{$("#bench").disabled=true;let rows=[];
+ for(const k of [4,6,8,9,10]){$("#bstat").textContent="Running "+k+" stops...";await new Promise(r=>setTimeout(r,30));
+  const s={n:0,dm:0,gc:0,gm:0,bc:0,bm:0,nd:0};
+  for(let r=0;r<3;r++){const q=makeGrid(30,30,100+r,.15);q.blk[0]=0;const m=buildMatrix(q,[0,...randStops(q,k,50+r,0)]),G=greedy(m.M);if(!isFinite(G.cost))continue;const B=backtrack(m.M,G);
+   s.n++;s.dm+=m.ms;s.gc+=G.cost;s.gm+=G.ms;s.bc+=B.cost;s.bm+=B.ms;s.nd+=B.nodes}
+  rows.push({k,...s})}
+ let h="<tr><th>Stops</th><th>Dijkstra table (ms)</th><th>Greedy cost (ms)</th><th>Backtracking cost (ms)</th><th>Routes explored</th><th>All orders (k!)</th><th>Greedy excess</th></tr>";
+ for(const r of rows){const n=r.n||1;h+=`<tr><td>${r.k}</td><td>${(r.dm/n).toFixed(2)}</td><td>${(r.gc/n).toFixed(0)} (${(r.gm/n).toFixed(3)})</td><td>${(r.bc/n).toFixed(0)} (${(r.bm/n).toFixed(2)})</td><td>${Math.round(r.nd/n)}</td><td>${fact(r.k)}</td><td>${((r.gc/r.bc-1)*100).toFixed(1)}%</td></tr>`}
+ $("#bt").innerHTML=h;const l=rows[rows.length-1];
+ $("#bnote").innerHTML=`At ${l.k} stops, pruning explored about ${Math.round(l.nd/l.n)} partial routes instead of ${fact(l.k)} full orders, and greedy's route was on average ${((l.gc/l.bc-1)*100).toFixed(1)}% costlier than the optimum. Greedy stays near-instant, while backtracking time grows quickly with each added stop.`;
+ $("#bstat").textContent="Done.";$("#bench").disabled=false};
+
+const xy=i=>[i%W+1,((i/W)|0)+1];
+function sync(){const a=xy(D),e=xy(E);$("#sc").value=a[0];$("#sr").value=a[1];$("#ec").value=e[0];$("#er").value=e[1];$("#rt").checked=round}
+function applyInputs(){const c=(p,q)=>{const x=+$(p).value-1,y=+$(q).value-1;return Number.isInteger(x)&&Number.isInteger(y)&&x>=0&&x<W&&y>=0&&y<H?y*W+x:-1};
+ const a=c("#sc","#sr"),e=c("#ec","#er"),rt=$("#rt").checked,m=$("#imsg");m.textContent="";
+ if(a<0||e<0){m.textContent="Columns run 1 to "+W+" and rows 1 to "+H+".";return}
+ if(g.blk[a]||g.blk[e]||stops.includes(a)||stops.includes(e)){m.textContent="Pick open junctions that are not already a stop.";return}
+ if(a===e&&!rt){m.textContent="Source and destination must differ, or tick Return to source.";return}
+ D=a;E=e;round=rt;refresh()}
+$("#go").onclick=applyInputs;$("#rt").onchange=applyInputs;
+runTests();sync();refresh();
+</script>
+</body></html>
